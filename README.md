@@ -1,7 +1,7 @@
 # Spectral bias in neural operators
 
 A small study of the spectral bias of Fourier Neural Operators on 2D Kolmogorov turbulence, and two
-ways of fighting it. Everything runs from a single spectral solver — no downloads.
+solutions.
 
 An MSE-trained FNO looks great on aggregate error (a few percent relative L2) while being almost
 completely wrong on the high wavenumbers: the loss is dominated by the high-amplitude low-k modes, so
