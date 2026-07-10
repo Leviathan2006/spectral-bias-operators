@@ -60,6 +60,7 @@ def espec(x):
 
 @torch.no_grad()
 def rollout(md, ic, mu, sd, steps, dev):
+    steps = min(steps, ic.shape[1] - 1)
     x = ic[:, :1].to(dev)
     seq = [x.clone()]
     for _ in range(steps):

@@ -110,11 +110,12 @@ def main():
     plots.curve_grid(hist, o)
 
     ics = (te[:C['nshow']] - mu) / sd
+    rl = min(C['roll'], C['ftest'] - 1)
     roll, pred1, spec1, curves, finals = {}, {}, {}, {}, {}
     nb = min(16, py.shape[0])
     gt_s = np.mean([M.espec(py[b]) for b in range(nb)], 0)
     for nm in C['models']:
-        pr, gt = M.rollout(mods[nm], ics, mu, sd, C['roll'], dev)
+        pr, gt = M.rollout(mods[nm], ics, mu, sd, rl, dev)
         roll[nm] = M.rmse_corr(pr, gt)
         p1 = torch.cat([mods[nm].predict(px[i:i + 128].to(dev)).detach().squeeze(1).cpu()
                         for i in range(0, px.shape[0], 128)], 0) * sd + mu
@@ -124,9 +125,9 @@ def main():
         finals[nm] = dict(l2=hist[nm]['l2'][-1], h1=hist[nm]['h1'][-1],
                           hik=hist[nm]['hik'][-1], b1=hist[nm]['b1'][-1])
 
-    sample = {nm: M.rollout(mods[nm], ics[:1], mu, sd, C['roll'], dev)[0][0] for nm in C['models']}
-    gt_sample = M.rollout(mods[C['models'][0]], ics[:1], mu, sd, C['roll'], dev)[1][0]
-    steps = [s for s in (0, C['roll'] // 4, C['roll'] // 2, C['roll']) if s <= C['roll']]
+    sample = {nm: M.rollout(mods[nm], ics[:1], mu, sd, rl, dev)[0][0] for nm in C['models']}
+    gt_sample = M.rollout(mods[C['models'][0]], ics[:1], mu, sd, rl, dev)[1][0]
+    steps = [0, rl // 4, rl // 2, rl]
 
     plots.snapshots(gt_sample, sample, steps, o)
     plots.err_maps(gt_sample, sample, steps[len(steps) // 2], o)
