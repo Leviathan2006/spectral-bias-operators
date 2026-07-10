@@ -17,7 +17,7 @@ C = dict(
     w=32, modes=32, L=4, K=3, smin=(1e-3) ** 0.5, lam=1e-3, beta=0.5,
     epochs=80, bs=32, lr=1e-3, wd=1e-4, workers=2,
     kfrac=0.25, nprobe=8, broll=8, roll=60, nshow=16,
-    out='out', seed=0,
+    out='results', seed=0,
 )
 if SMOKE:
     C.update(res=32, gres=32, dt=1e-3, dtr=0.5, ntrain=60, ntest=8, ftrain=14, ftest=20,
@@ -54,6 +54,9 @@ def train(name, loader, px, py, ic, mu, sd, kc, k2):
     ck = sorted({1, C['epochs'] // 4, C['epochs'] // 2, C['epochs']})
     h = {k: [] for k in ['ep', 'l2', 'h1', 'hik', 'lok', 'b0', 'b1', 'tl']}
     h['curves'] = {}
+    cpath = os.path.join(C['out'], name + '.csv')
+    with open(cpath, 'w') as fh:
+        fh.write('epoch,train_loss,l2,h1,hik,lok,boch0,boch1\n')
     for ep in range(1, C['epochs'] + 1):
         md.train(); t0 = time.time(); acc = 0; nb = 0
         for xb, yb in loader:
@@ -72,6 +75,9 @@ def train(name, loader, px, py, ic, mu, sd, kc, k2):
             h['curves'][ep] = M.spec_err(pr, py)
         print(f'  ep {ep:3d} loss {acc/max(nb,1):.2e}  L2 {mv["l2"]:5.2f}  hi-k {mv["hik"]:6.2f}  '
               f'H1 {mv["h1"]:5.2f}  B1 {mv["b1"]:6.2f}  ({time.time()-t0:.0f}s)')
+        with open(cpath, 'a') as fh:
+            fh.write(f'{ep},{acc/max(nb,1):.6e},{mv["l2"]:.4f},{mv["h1"]:.4f},'
+                     f'{mv["hik"]:.4f},{mv["lok"]:.4f},{mv["b0"]:.4f},{mv["b1"]:.4f}\n')
     return md, h
 
 
@@ -135,11 +141,19 @@ def main():
     step_specs = [np.mean([M.espec((s.squeeze(1).cpu() * sd + mu)[b]) for b in range(nb)], 0) for s in tr_seq]
     plots.refine_spectra(step_specs, gt_s, o)
 
-    print('\nfinal')
+    sm = ['model,l2,h1,hik,boch1,gap']
+    for nm in C['models']:
+        f = finals[nm]
+        sm.append(f'{nm},{f["l2"]:.3f},{f["h1"]:.3f},{f["hik"]:.3f},{f["b1"]:.3f},'
+                  f'{f["h1"]/max(f["l2"],1e-6):.3f}')
+    with open(os.path.join(o, 'summary.csv'), 'w') as fh:
+        fh.write('\n'.join(sm) + '\n')
+    print('\nfinal (also results/summary.csv)')
     for nm in C['models']:
         f = finals[nm]
         print(f'  {nm:<12} L2 {f["l2"]:.2f}  hi-k {f["hik"]:.2f}  H1 {f["h1"]:.2f}  '
               f'Boch-H1 {f["b1"]:.2f}  gap {f["h1"]/max(f["l2"],1e-6):.2f}')
+    print('\nnumbers -> results/*.csv, results/summary.csv   graphs -> results/*.png')
 
 
 if __name__ == '__main__':

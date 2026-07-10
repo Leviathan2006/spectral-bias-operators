@@ -1,4 +1,4 @@
-out/
+results/
 __pycache__/
 *.pyc
 *.npy

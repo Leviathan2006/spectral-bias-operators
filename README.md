@@ -38,7 +38,9 @@ python main.py            # ~15-30 min on a single GPU
 SMOKE=1 python main.py    # tiny/fast sanity run
 ```
 
-All hyperparameters are in the `C` dict at the top of `main.py`. Figures land in `out/`.
+All hyperparameters are in the `C` dict at the top of `main.py`. Everything lands in `results/`:
+per-epoch metrics stream to `results/<model>.csv` (written live — you can `tail -f` them during a
+run), the final table to `results/summary.csv`, and all the figures as `.png`.
 
 `python bench.py` times the core fft / complex-matmul / conv kernels — handy to check the GPU stack
 is healthy before a long run (each op should be well under a millisecond).
