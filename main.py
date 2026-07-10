@@ -47,11 +47,6 @@ def probe_metrics(md, px, py, ic, mu, sd, kc, k2):
 
 def train(name, loader, px, py, ic, mu, sd, kc, k2):
     md = nets.build(name, C).to(dev)
-    if os.environ.get('COMPILE') == '1':
-        try:
-            md.net = torch.compile(md.net)
-        except Exception as ex:
-            print('compile off:', ex)
     opt = torch.optim.AdamW(md.parameters(), lr=C['lr'], weight_decay=C['wd'])
     sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=C['epochs'])
     np_ = sum(p.numel() for p in md.parameters())
