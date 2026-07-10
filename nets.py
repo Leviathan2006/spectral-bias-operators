@@ -27,15 +27,26 @@ class Spec(nn.Module):
         return torch.fft.irfft2(o, s=(h, w))
 
 
+class Mix(nn.Module):
+    # 1x1 channel mix as a matmul; cuDNN's 1x1 conv has bad launch latency on blackwell
+    def __init__(self, ci, co):
+        super().__init__()
+        self.w = nn.Parameter(torch.randn(co, ci) * ci ** -0.5)
+        self.b = nn.Parameter(torch.zeros(co))
+
+    def forward(self, x):
+        return torch.einsum('bihw,oi->bohw', x, self.w) + self.b.view(1, -1, 1, 1)
+
+
 class Trunk(nn.Module):
     def __init__(self, w, m, L, cin, nstep=0):
         super().__init__()
-        self.inp = nn.Conv2d(cin, w, 1)
+        self.inp = Mix(cin, w)
         self.emb = nn.Embedding(nstep + 1, w) if nstep else None
         self.sp = nn.ModuleList(Spec(w, w, m) for _ in range(L))
-        self.lin = nn.ModuleList(nn.Conv2d(w, w, 1) for _ in range(L))
-        self.o1 = nn.Conv2d(w, 128, 1)
-        self.o2 = nn.Conv2d(128, 1, 1)
+        self.lin = nn.ModuleList(Mix(w, w) for _ in range(L))
+        self.o1 = Mix(w, 128)
+        self.o2 = Mix(128, 1)
 
     def forward(self, x, k=None):
         z = self.inp(x)

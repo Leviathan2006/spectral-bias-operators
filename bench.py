@@ -30,6 +30,8 @@ k = torch.randn(32, 32, 1, 1, device=d)
 print('fft   %7.3f ms' % t(lambda: torch.fft.irfft2(torch.fft.rfft2(x), s=(64, 64))))
 print('cmul  %7.3f ms' % t(lambda: torch.einsum('bixy,ioxy->boxy', xf, w)))
 print('conv  %7.3f ms' % t(lambda: torch.nn.functional.conv2d(x, k)))
+mw = torch.randn(32, 32, device=d)
+print('mix   %7.3f ms' % t(lambda: torch.einsum('bihw,oi->bohw', x, mw)))   # matmul 1x1 replacement
 print('gelu  %7.3f ms' % t(lambda: torch.nn.functional.gelu(x)))
 
 # each should be well under a millisecond on a modern gpu. tens of ms => the
