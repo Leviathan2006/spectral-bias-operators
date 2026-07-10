@@ -40,6 +40,9 @@ SMOKE=1 python main.py    # tiny/fast sanity run
 
 All hyperparameters are in the `C` dict at the top of `main.py`. Figures land in `out/`.
 
+`python bench.py` times the core fft / complex-matmul / conv kernels — handy to check the GPU stack
+is healthy before a long run (each op should be well under a millisecond).
+
 ## Figures produced
 
 `highk_epoch` (high-k error vs epoch for each model), `f_principle` (FNO learns low-k first, high-k
