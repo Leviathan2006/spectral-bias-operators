@@ -26,6 +26,7 @@ if SMOKE:
 os.makedirs(C['out'], exist_ok=True)
 dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 torch.manual_seed(C['seed']); np.random.seed(C['seed'])
+torch.backends.cudnn.benchmark = True
 print('device', dev, '| smoke', SMOKE)
 
 
@@ -46,6 +47,11 @@ def probe_metrics(md, px, py, ic, mu, sd, kc, k2):
 
 def train(name, loader, px, py, ic, mu, sd, kc, k2):
     md = nets.build(name, C).to(dev)
+    if os.environ.get('COMPILE') == '1':
+        try:
+            md.net = torch.compile(md.net)
+        except Exception as ex:
+            print('compile off:', ex)
     opt = torch.optim.AdamW(md.parameters(), lr=C['lr'], weight_decay=C['wd'])
     sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=C['epochs'])
     np_ = sum(p.numel() for p in md.parameters())
